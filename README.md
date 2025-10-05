@@ -3,6 +3,8 @@
   💻 <a href="https://github.com/Littleor/ExpertMerging"><b>Code</b></a>&nbsp&nbsp | &nbsp&nbsp📄 <a href="https://arxiv.org/abs/2509.25712"><b>Paper</b></a>
 </p>
 
+> The first author is currently seeking PhD opportunities for Fall 2026 / Spring 2027. Please see the [CV](https://littleor.github.io/) and feel free to share relevant openings. Thank you!
+
 Official implementation of Expert Merging. This project learns to combine multiple domain-specialized expert LLMs into a single LLMs via Unsupervised Expert Alignment and Importance-Guided Layer Chunking.
 
 ![Model Architecture](./figures/model.png)
