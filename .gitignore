@@ -35,7 +35,7 @@ results/
 .cache/
 */.cache/
 
-datasets/
+dataset/
 
 # PyTorch Lightning / other checkpoints
 lightning_logs/

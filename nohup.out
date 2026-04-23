@@ -1,0 +1,103 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+============================================================
+Task:  codecontests
+Model: /primus_xpfs_workspace_T04/wmq/merge/models/ReasonFlux-Coder-7B
+Data:  /primus_xpfs_workspace_T04/wmq/merge/datasets/CodeContests_train/train/CodeContests_train.json
+============================================================
+Loaded 100 samples
+Loading tokenizer...
+Loading model...
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:03<00:09,  3.28s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:06<00:06,  3.25s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:09<00:03,  3.01s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:09<00:00,  2.10s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:09<00:00,  2.49s/it]
+Output: /primus_xpfs_workspace_T04/wmq/merge/ExpertMerging/inference_results/codecontests_inference_results.jsonl
+Max new tokens: 2048
+Batch size: 4
+
+Inferencing:   0%|          | 0/25 [00:00<?, ?it/s]The following generation flags are not valid and may be ignored: ['top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set `padding_side='left'` when initializing the tokenizer.
+Inferencing:   4%|▍         | 1/25 [00:21<08:45, 21.88s/it]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set `padding_side='left'` when initializing the tokenizer.
+Inferencing:   8%|▊         | 2/25 [00:44<08:32, 22.28s/it]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set `padding_side='left'` when initializing the tokenizer.
+Inferencing:  12%|█▏        | 3/25 [01:04<07:47, 21.25s/it]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set `padding_side='left'` when initializing the tokenizer.
+Inferencing:  16%|█▌        | 4/25 [01:25<07:23, 21.13s/it]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set `padding_side='left'` when initializing the tokenizer.
+Inferencing:  20%|██        | 5/25 [01:50<07:33, 22.66s/it]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set `padding_side='left'` when initializing the tokenizer.
+Inferencing:  24%|██▍       | 6/25 [02:10<06:49, 21.58s/it]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set `padding_side='left'` when initializing the tokenizer.
+Inferencing:  28%|██▊       | 7/25 [02:35<06:51, 22.88s/it]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set `padding_side='left'` when initializing the tokenizer.
+Inferencing:  32%|███▏      | 8/25 [02:57<06:20, 22.37s/it]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set `padding_side='left'` when initializing the tokenizer.
+Inferencing:  36%|███▌      | 9/25 [03:24<06:25, 24.07s/it]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set `padding_side='left'` when initializing the tokenizer.
+Inferencing:  36%|███▌      | 9/25 [03:38<06:27, 24.25s/it]
+Traceback (most recent call last):
+  File "/primus_xpfs_workspace_T04/wmq/merge/ExpertMerging/run_inference.py", line 299, in <module>
+    main()
+  File "/primus_xpfs_workspace_T04/wmq/merge/ExpertMerging/run_inference.py", line 295, in main
+    run_inference(args)
+  File "/primus_xpfs_workspace_T04/wmq/merge/ExpertMerging/run_inference.py", line 228, in run_inference
+    outputs = model.generate(
+              ^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/transformers/generation/utils.py", line 2564, in generate
+    result = decoding_method(
+             ^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/transformers/generation/utils.py", line 2787, in _sample
+    outputs = model_forward(**model_inputs, return_dict=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/accelerate/hooks.py", line 175, in new_forward
+    output = module._old_forward(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/transformers/utils/generic.py", line 918, in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/transformers/models/qwen2/modeling_qwen2.py", line 449, in forward
+    outputs: BaseModelOutputWithPast = self.model(
+                                       ^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/transformers/utils/generic.py", line 1064, in wrapper
+    outputs = func(self, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/transformers/models/qwen2/modeling_qwen2.py", line 384, in forward
+    hidden_states = decoder_layer(
+                    ^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/transformers/modeling_layers.py", line 94, in __call__
+    return super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/accelerate/hooks.py", line 170, in new_forward
+    args, kwargs = module._hf_hook.pre_forward(module, *args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/accelerate/hooks.py", line 369, in pre_forward
+    return send_to_device(args, self.execution_device), send_to_device(
+                                                        ^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/accelerate/utils/operations.py", line 179, in send_to_device
+    {
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/accelerate/utils/operations.py", line 180, in <dictcomp>
+    k: t if k in skip_keys else send_to_device(t, device, non_blocking=non_blocking, skip_keys=skip_keys)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/accelerate/utils/operations.py", line 170, in send_to_device
+    return honor_type(
+           ^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/accelerate/utils/operations.py", line 82, in honor_type
+    return type(obj)(generator)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/accelerate/utils/operations.py", line 171, in <genexpr>
+    tensor, (send_to_device(t, device, non_blocking=non_blocking, skip_keys=skip_keys) for t in tensor)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/primus_xpfs_workspace_T04/huanqia/miniconda3/envs/qwenvl3_ms_swift/lib/python3.11/site-packages/accelerate/utils/operations.py", line 154, in send_to_device
+    return tensor.to(device, non_blocking=non_blocking)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
