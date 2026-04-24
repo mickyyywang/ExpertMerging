@@ -90,15 +90,27 @@ def load_toolrl(data_path, max_samples=None):
 
 
 def load_codecontests(data_path, max_samples=None):
-    """CodeContests: question 是编程题纯文本，构造为 user message"""
+    """CodeContests: 使用 CURE 官方 prompt 模板构造 messages（含 system + user）"""
     with open(data_path, "r") as f:
         data = json.load(f)
     if max_samples:
         data = data[:max_samples]
 
+    system_content = "You are a helpful assistant help user solve problems."
+    user_template = (
+        "You need to think first then write python script. "
+        "You should use input() to input and print() to output in your script. "
+        "Your code should output the results based on the input read in, "
+        "rather than generating the given test example.\n"
+        "This is the problem:\n{question}"
+    )
+
     samples = []
     for idx, item in enumerate(data):
-        messages = [{"role": "user", "content": item["question"]}]
+        messages = [
+            {"role": "system", "content": system_content},
+            {"role": "user", "content": user_template.format(question=item["question"])},
+        ]
         samples.append({
             "messages": messages,
             "index": item.get("task_id", idx),
@@ -110,7 +122,7 @@ def load_codecontests(data_path, max_samples=None):
 
 
 def load_hotpotqa(data_path, max_samples=None):
-    """HotpotQA: context（长文档）+ prompt（user question）拼接为 user message"""
+    """HotpotQA: 保留 context 和 question 分离，用于 MemAgent 多轮推理"""
     df = pd.read_parquet(data_path)
     if max_samples:
         df = df.head(max_samples)
@@ -122,16 +134,16 @@ def load_hotpotqa(data_path, max_samples=None):
             prompt = prompt.tolist()
         user_question = prompt[0]["content"]
         context = row["context"]
-        # 与 ExpertMerging/dataset/Memory.json 保持一致：context + question
-        combined_content = f"{context}\n\n{user_question}"
-        messages = [{"role": "user", "content": combined_content}]
+
         reward_model = row.get("reward_model", {})
         ground_truth = reward_model.get("ground_truth", "")
         if hasattr(ground_truth, "tolist"):
             ground_truth = ground_truth.tolist()
 
         samples.append({
-            "messages": messages,
+            "context": context,
+            "question": user_question,
+            "messages": [],  # 多轮推理时动态构建
             "index": row.get("extra_info", {}).get("index", len(samples)),
             "ground_truth": ground_truth,
             "style": reward_model.get("style", ""),
@@ -144,6 +156,132 @@ LOADER_MAP = {
     "codecontests": load_codecontests,
     "hotpotqa": load_hotpotqa,
 }
+
+# ============================================================
+# MemAgent 多轮推理模板（来自 MemAgent quickstart.py）
+# ============================================================
+
+MEMAGENT_TEMPLATE = """You are presented with a problem, a section of an article that may contain the answer to the problem, and a previous memory. Please read the provided section carefully and update the memory with the new information that helps to answer the problem. Be sure to retain all relevant details from the previous memory while adding any new, useful information.
+
+<problem> 
+{prompt}
+</problem>
+
+<memory>
+{memory}
+</memory>
+
+<section>
+{chunk}
+</section>
+
+Updated memory:
+"""
+
+MEMAGENT_TEMPLATE_FINAL = """You are presented with a problem and a previous memory. Please answer the problem based on the previous memory and put the answer in \\boxed{{}}.
+
+<problem> 
+{prompt}
+</problem>
+
+<memory>
+{memory}
+</memory>
+
+Your answer:
+"""
+
+MEMAGENT_NO_MEMORY = "No previous memory"
+MEMAGENT_CHUNK_SIZE = 5000       # tokens per chunk
+MEMAGENT_MAX_MEMORY_TOKENS = 1024  # max tokens for memory update response
+
+
+def _generate_single(model, tokenizer, messages, max_new_tokens, temperature=0.7, top_p=0.95):
+    """对单条消息调用模型生成，返回 response 文本"""
+    text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=32768).to(model.device)
+    with torch.no_grad():
+        output = model.generate(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            do_sample=True,
+            temperature=temperature,
+            top_p=top_p,
+            pad_token_id=tokenizer.pad_token_id,
+        )
+    generated_ids = output[0][inputs["input_ids"].shape[1]:]
+    return tokenizer.decode(generated_ids, skip_special_tokens=True)
+
+
+def run_hotpotqa_inference(model, tokenizer, samples, args):
+    """MemAgent 多轮推理：逐 chunk 更新 memory，最后生成答案"""
+    results = []
+    start_time = time.time()
+
+    for idx, sample in enumerate(tqdm(samples, desc="HotpotQA MemAgent Inference")):
+        context = sample["context"]
+        question = sample["question"]
+
+        # 1. 将 context 按 token 分 chunk
+        context_ids = tokenizer.encode(context)
+        chunks = []
+        for i in range(0, len(context_ids), MEMAGENT_CHUNK_SIZE):
+            chunk_ids = context_ids[i : i + MEMAGENT_CHUNK_SIZE]
+            chunks.append(tokenizer.decode(chunk_ids, skip_special_tokens=True))
+
+        # 2. 逐 chunk 更新 memory，同时记录每轮的 (messages, response)
+        memory = MEMAGENT_NO_MEMORY
+        chunk_rounds = []  # 中间轮记录
+        for chunk_text in chunks:
+            msg_content = MEMAGENT_TEMPLATE.format(
+                prompt=question, memory=memory, chunk=chunk_text
+            )
+            chunk_messages = [{"role": "user", "content": msg_content}]
+            memory = _generate_single(
+                model, tokenizer, chunk_messages,
+                max_new_tokens=MEMAGENT_MAX_MEMORY_TOKENS,
+                temperature=args.temperature if args.do_sample else 0.7,
+                top_p=args.top_p if args.do_sample else 0.95,
+            )
+            chunk_rounds.append({
+                "messages": chunk_messages,
+                "response": memory,
+            })
+
+        # 3. 最终回答
+        final_msg = MEMAGENT_TEMPLATE_FINAL.format(prompt=question, memory=memory)
+        final_messages = [{"role": "user", "content": final_msg}]
+        response = _generate_single(
+            model, tokenizer, final_messages,
+            max_new_tokens=args.max_new_tokens,
+            temperature=args.temperature if args.do_sample else 0.7,
+            top_p=args.top_p if args.do_sample else 0.95,
+        )
+
+        result = {
+            "index": sample["index"],
+            "task": "hotpotqa",
+            "messages": final_messages,
+            "response": response,
+            "memory": memory,
+            "chunk_rounds": chunk_rounds,  # 中间轮的 (messages, response)
+        }
+        if "ground_truth" in sample:
+            result["ground_truth"] = sample["ground_truth"]
+        if "style" in sample:
+            result["style"] = sample["style"]
+        results.append(result)
+
+        if idx == 0:
+            print(f"\n--- Sample 0 preview ---")
+            print(f"  Chunks: {len(chunks)}")
+            print(f"  Final memory (first 200): {memory[:200]}")
+            print(f"  Response (first 200): {response[:200]}")
+            print()
+
+    elapsed = time.time() - start_time
+    print(f"\nDone! {len(results)} samples in {elapsed:.1f}s")
+    return results
 
 
 # ============================================================
@@ -191,7 +329,16 @@ def run_inference(args):
     print(f"Batch size: {args.batch_size}")
     print()
 
-    # 逐条或批量推理
+    # HotpotQA 走 MemAgent 多轮推理路径
+    if args.task == "hotpotqa":
+        results = run_hotpotqa_inference(model, tokenizer, samples, args)
+        with open(output_file, "w", encoding="utf-8") as f:
+            for result in results:
+                f.write(json.dumps(result, ensure_ascii=False) + "\n")
+        print(f"Results saved to: {output_file}")
+        return
+
+    # 其他任务：逐条或批量推理
     results = []
     start_time = time.time()
 

@@ -40,7 +40,9 @@ dataset/
 # PyTorch Lightning / other checkpoints
 lightning_logs/
 checkpoints/
+inference_results_1/
 
 # Temporary files
 *.tmp
 *.bak
+*.txt
