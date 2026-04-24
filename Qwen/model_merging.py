@@ -310,7 +310,8 @@ def main():
     exclude_regex = args.exclude_params
 
     if args.method == "expert_merging":
-        base_model = base_model.cuda()
+        # base_model = base_model.cuda()
+        # expert_models = [m.cuda() for m in expert_models]
         merged_params = expert_merging_method(
             base_model=base_model,
             expert_models=expert_models,

@@ -148,19 +148,20 @@ class ExpertMergingTrainer(BaseExpertMergingTrainer):
         if self.accelerator.is_main_process:
             self.accelerator.init_trackers("parametric_expert_merging_qwen")
 
-    def _prepare_inputs(self, question: str, response: str, model=None):
+    def _prepare_inputs(self, messages: list, response: str, model=None):
         """Prepare tokenized inputs using Qwen chat template.
 
-        Constructs a chat-formatted prompt with ``question`` as user turn and
-        ``response`` as assistant turn, tokenizes it and returns tensors ready
-        for the model forward pass.
+        Accepts a list of chat messages (each a dict with ``role`` and
+        ``content`` keys, e.g. system + user turns) and an optional
+        ``response`` string.  Applies the tokenizer's chat template to
+        produce the final input tensors.
         """
-        messages = [{"role": "user", "content": question}]
+        full_messages = list(messages)
         if response:
-            messages.append({"role": "assistant", "content": response})
+            full_messages.append({"role": "assistant", "content": response})
 
         text = self.tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=not response,
+            full_messages, tokenize=False, add_generation_prompt=not response,
         )
 
         model_inputs = self.tokenizer(
@@ -180,14 +181,14 @@ class ExpertMergingTrainer(BaseExpertMergingTrainer):
     def train_step(self, batch):
         """Single training step: distill one teacher into the merged student."""
         teacher_idx = batch["teacher_model_idx"][0]
-        question = batch["question"][0]
+        messages = batch["messages"][0]
         response = batch["response"][0]
         task_name = batch["task_name"][0]
 
-        teacher_model = self._get_teacher_model(teacher_idx)
-
         # Prepare inputs
-        inputs = self._prepare_inputs(question, response, model=teacher_model)
+        inputs = self._prepare_inputs(messages, response)
+        
+        teacher_model = self._get_teacher_model(teacher_idx)
 
         # Teacher forward (no grad)
         teacher_model.eval()
@@ -247,7 +248,7 @@ class ExpertMergingTrainer(BaseExpertMergingTrainer):
             shuffle=True,
             collate_fn=lambda x: {
                 "teacher_model_idx": [x[0]["teacher_model_idx"]],
-                "question": [x[0]["question"]],
+                "messages": [x[0]["messages"]],
                 "response": [x[0]["response"]],
                 "task_name": [x[0]["task_name"]],
                 "question_id": [x[0]["question_id"]],

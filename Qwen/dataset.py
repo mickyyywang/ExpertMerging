@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import random
 from pathlib import Path
 
@@ -8,7 +7,7 @@ from torch.utils.data import Dataset
 
 logger = logging.getLogger(__name__)
 
-# Task name → Teacher expert model index (1-based)
+# Task name -> Teacher expert model index (1-based)
 # Expert 1: Tool calling (Qwen2.5-7B-Instruct-ToolRL-grpo-cold)
 # Expert 2: Memory agent (RL-MemoryAgent-7B)
 # Expert 3: Code reasoning (ReasonFlux-Coder-7B)
@@ -33,17 +32,23 @@ class ExpertMergingDataset(Dataset):
             Code.json
             ...
 
-    Each JSON file is a list of objects::
+    Each JSON file is a list of objects with chat messages format::
 
         [
             {
-                "question": "user prompt text",
-                "response": "expected assistant response (can be from expert)",
-                "task_name": "ToolCall",          # optional, inferred from filename
-                "question_id": 0                  # optional, auto-assigned if missing
+                "messages": [
+                    {"role": "system", "content": "..."},
+                    {"role": "user", "content": "..."}
+                ],
+                "response": "expected assistant response",
+                "task_name": "ToolCall",
+                "question_id": 0
             },
             ...
         ]
+
+    Legacy format with a flat "question" field is also supported for
+    backward compatibility.
     """
 
     def __init__(
@@ -59,6 +64,21 @@ class ExpertMergingDataset(Dataset):
 
         self.samples = []
         self._load_samples()
+
+    def _normalize_sample(self, sample: dict) -> dict:
+        """Normalize a sample to always have a messages field.
+
+        If the sample already contains messages (a list of role/content
+        dicts), keep it as-is.  Otherwise fall back to the legacy
+        question field and wrap it into a single-user-turn message list.
+        """
+        if "messages" in sample and isinstance(sample["messages"], list):
+            return sample
+
+        # Legacy format: flat question string -> wrap into messages
+        question_text = sample.get("question", "")
+        sample["messages"] = [{"role": "user", "content": question_text}]
+        return sample
 
     def _load_samples(self):
         for task_name in self.task_to_model_idx:
@@ -88,6 +108,7 @@ class ExpertMergingDataset(Dataset):
             logger.info(f"Loaded {len(sampled_data)} samples for {task_name}")
 
             for idx, sample in enumerate(sampled_data):
+                sample = self._normalize_sample(sample)
                 sample.setdefault("task_name", task_name)
                 sample.setdefault("question_id", idx)
                 sample["teacher_model_idx"] = self.task_to_model_idx[task_name]
@@ -102,7 +123,7 @@ class ExpertMergingDataset(Dataset):
     def __getitem__(self, idx):
         sample = self.samples[idx]
         return {
-            "question": sample["question"],
+            "messages": sample["messages"],
             "response": sample.get("response", ""),
             "question_id": sample["question_id"],
             "task_name": sample["task_name"],

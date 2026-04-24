@@ -646,7 +646,7 @@ class BaseExpertMergingTrainer(ABC):
             progress_bar = tqdm(dataloader, desc=f"Epoch {epoch+1}/{num_epochs}")
 
             for step, batch in enumerate(progress_bar):
-                logger.info(f"Step {step}: {batch['task_name'][0]}-{batch['question_id'][0]} {batch['image_paths'][0]}")
+                logger.info(f"Step {step}: {batch['task_name'][0]}-{batch['question_id'][0]}")
                 with self.accelerator.accumulate(self.student_model):
                     loss_dict = self.train_step(batch)
 
